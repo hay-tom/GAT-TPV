@@ -75,3 +75,36 @@ def cluster_unknowns(
     labels[sel_idx] = labels_small.astype(int)
 
     return labels
+
+def cluster_anomaly_samples(
+    features: np.ndarray,
+    decisions: np.ndarray,
+    method: str = "dbscan",
+    params: Optional[Dict[str, Any]] = None,
+    sample_scores: Optional[np.ndarray] = None,
+) -> np.ndarray:
+
+    decisions = np.asarray(decisions, dtype=np.int64)
+    anomaly_mask = decisions == 2
+
+    labels_all = np.full(decisions.shape[0], -1, dtype=int)
+
+    if anomaly_mask.sum() == 0:
+        return labels_all
+
+    features_anom = features[anomaly_mask]
+
+    scores_anom = None
+    if sample_scores is not None:
+        scores_anom = np.asarray(sample_scores)[anomaly_mask]
+
+    labels_anom = cluster_unknowns(
+        features=features_anom,
+        method=method,
+        params=params,
+        sample_scores=scores_anom,
+    )
+
+    labels_all[anomaly_mask] = labels_anom
+
+    return labels_all
